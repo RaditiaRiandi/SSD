@@ -1,0 +1,313 @@
+---
+title: "STATISTIKA SAINS DATA MODUL 8"
+author: "KELOMPOK 8 RB"
+date: "2023-05-13"
+output: html_document
+---
+
+# Kelompok 08
+
+### 121450013_Anasthashya Rachman
+
+### 121450082_Kirana Ratu Malhanny
+
+### 121450085_Revaldo Dafa Fahmindo
+
+### 121450127_Dara Cantika Dewi
+
+### 121450145_Mayada
+
+### i) Pengantar dataset (respons, variabel prediktor, jumlah observasi, dan jumlah prediktor) 
+#### Dataset Bank Marketing yang digunakan dalam pengerjaan tugas kali memiliki 4521 sampel dan 17 atribut. Atribut tersebut terdiri dari 7 variabel numerik dan 10 variabel kategorikal. Tujuan dari dataset ini adalah untuk memprediksi apakah seseorang akan membeli produk deposito bank atau tidak, dengan menggunakan informasi dari variabel prediktor.
+#### -	Respons: 
+#### •	y (apakah nasabah berlangganan deposito atau tidak)
+#### -	Variabel Prediktor:
+#### Numerik:
+#### •	age: umur nasabah
+#### •	balance: saldo nasabah pada saat kampanye pemasaran dimulai
+#### •	day: hari terakhir kontak dalam kampanye pemasaran
+#### •	duration: durasi panggilan terakhir dalam detik
+#### •	campaign: jumlah kontak yang telah dilakukan selama kampanye pemasaran
+#### •	pdays: jumlah hari sejak nasabah terakhir kali dihubungi dari kampanye pemasaran sebelumnya
+#### •	previous: jumlah kontak yang telah dilakukan sebelum kampanye pemasaran saat ini
+#### Kategorik:
+#### •	job: jenis pekerjaan nasabah
+#### •	marital: status pernikahan nasabah
+#### •	education: tingkat pendidikan nasabah
+#### •	default: apakah nasabah memiliki kredit macet atau tidak
+#### •	housing: apakah nasabah memiliki kredit rumah atau tidak
+#### •	loan: apakah nasabah memiliki kredit pribadi atau tidak
+#### •	contact: jenis komunikasi yang digunakan untuk menghubungi nasabah
+#### •	month: bulan saat terakhir kali nasabah dihubungi
+#### •	poutcome: hasil kampanye pemasaran sebelumnya
+#### -	Jumlah Observasi: 4521 sampel
+#### -	Jumlah Prediktor: 16 variabel
+
+### ii)	Pertanyaan yang ingin Anda jawab (Uraikan apa saja yang ingin anda tinjau) 
+#### -	Apakah kita dapat memprediksi apakah seseorang akan melakukan subskripsi produk bank atau tidak dengan menggunakan informasi dari variabel prediktor?
+#### -	Bagaimana faktor-faktor yang mempengaruhi seseorang membeli produk deposito bank?
+#### -	Bagaimana performa tiap model klasifikasi yang digunakan dalam memprediksi apakah seseorang akan membeli produk deposito bank atau tidak?
+#### -	Manakah model klasifikasi yang paling akurat dalam memprediksi apakah seseorang akan membeli produk deposito bank atau tidak?
+
+### Memanggil library 
+```{r}
+library(ggplot2)
+library(tree)
+library(rpart)
+library(randomForest)
+library(rpart.plot)
+```
+#### Dilakukan pemanggilan library yang akan digunakan untuk pengolahan data berikutnya 
+
+### Import dataset
+```{r}
+bank = read.csv("C:/Mayada/bank.csv")
+str(bank)
+head(bank)
+```
+
+#### Dilakukan import dataset bank dan menggunakan str untuk mengetahui struktur dataset bank berdasarkan tiap-tiap variabel serta menggunakan head untuk menampilkan 6 data teratas 
+
+### iii)	Pembersihan data (Jika terdapat missing value) 
+```{r}
+sum(is.na(bank))
+```
+#### Dilakukan pengecekan missing value dan didapatkan 0 missing value dalam pembersihan data 
+
+### iv)	Analisis deskriptif awal (ringkasan numerik dan gambar plot – jika diperlukan) 
+```{r}
+bank$y <- ifelse(bank$y == "no", 0, 1)
+bank$y
+```
+#### Dilakukan pengubahan variabel 'y' menjadi variabel biner (0 = no, 1 = yes) 
+
+### Ringkasan numerik
+```{r}
+summary(bank)
+```
+#### Dilakukan ringkasan numerik dengan menggunakan summary untuk melihat nilai min, quartil 1, median, quartil 3, mean, max, length, class, mode dari masing-masing variabel. 
+
+### Membuat plot variabel numerik
+```{r}
+hist(bank$age, main="Persebaran Data Age", xlab="Age")
+hist(bank$balance, main="Persebaran Data Balance", xlab="Balance")
+hist(bank$day, main="Persebaran Data Day", xlab="Day")
+hist(bank$duration, main="Persebaran Data Duration", xlab="Duration")
+hist(bank$campaign , main="Persebaran Data Campaign", xlab="Campaign")
+hist(bank$pdays, main="Persebaran Data Pdays", xlab="Pdays")
+hist(bank$previous, main="Persebaran Data Previous", xlab="Previous")
+hist(bank$y, main="Persebaran Data Status Deposit", xlab="Status Deposit")
+```
+#### Didapatkan persebaran data variabel age (umur nasabah) rata-rata mengalami penurunan yang signifikan dan didapatkan nilai max pada range age 30-35 dan pada frekuensi lebih dari 1000 
+#### Didapatkan persebaran data variabel balance (saldo nasabah pada saat kampanye pemasaran dimulai) rata-rata mengalami penurunan yang signifikan setelah terjadi kenaikan yang sangat besardan didapatkan nilai max pada range balance 0-50 dan pada frekuensi 3500 
+#### Didapatkan persebaran data variabel day (hari terakhir kontak dalam kampanye pemasaran) rata-rata mengalami kenaikan dan penurunan yang signifikan dan didapatkan nilai max pada range day 18-20 dan pada frekuensi lebih dari 400
+#### Didapatkan persebaran data variabel duration (durasi panggilan terakhir dalam detik) rata-rata mengalami penurunan yang signifikan dan didapatkan nilai max pada range duration 0-200 dan pada frekuensi 2500
+#### Didapatkan persebaran data variabel campaign (jumlah kontak yang telah dilakukan selama kampanye pemasaran) rata-rata mengalami penurunan yang signifikan dan didapatkan nilai max pada range campaign 0-5 dan pada frekuensi lebih dari 4000 
+#### Didapatkan persebaran data variabel pday (jumlah hari sejak nasabah terakhir kali dihubungi dari kampanye pemasaran sebelumnya) mengalami penurunan yang signifikan dan terjadi kenaikan serta penerunan yang sangat kecil pada data berikutnya serta didapatkan nilai max pada range pday sebelum 0 dan pada frekuensi lebih dari 3000 
+#### Didapatkan persebaran data variabel previous (jumlah kontak yang telah dilakukan sebelum kampanye pemasaran saat ini) rata-rata mengalami penurunan yang signifikan dan didapatkan nilai max pada range previous 0-2 dan pada frekuensi lebih dari 4000 
+#### Didapatkan persebaran data variabel deposit adalah lebih banyak no yang berarti banyak nasabah yang tidak berlangganan deposito
+
+### Membuat plot variabel numerik
+```{r}
+ggplot(data = bank, aes(x = job)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Job", y = "Count", title = "Bar Plot Job") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = marital)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Marital", y = "Count", title = "Bar Plot Marital") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = education)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Education", y = "Count", title = "Bar Plot Education") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = default)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Default", y = "Count", title = "Bar Plot Default") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = housing)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Housing", y = "Count", title = "Bar Plot Housing") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = loan)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Loan", y = "Count", title = "Bar Plot Loan") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = contact)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Contact", y = "Count", title = "Bar Plot Contact") +
+  theme_bw()
+
+ggplot(data = bank, aes(x = month)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Month", y = "Count", title = "Bar Plot Month") +
+  theme_bw()
+```
+#### Membuat visualisasi plot pada variabel kategorik job dan didapatkan perhitungan terbanyak pada jenis pekerjaan nasabah sebagai management
+#### Membuat visualisasi plot pada variabel kategorik marital dan didapatkan perhitungan terbanyak pada status pernikahan nasabah yang sudah marrird atau menikah
+#### Membuat visualisasi plot pada variabel kategorik education dan didapatkan perhitungan terbanyak pada tingkat pendidikan nasabah yang berada pada pendidikan secondary
+#### Membuat visualisasi plot pada variabel kategorik default dan didapatkan perhitungan terbanyak pada keterangan nasabah yang tidak memiliki kredit macet
+#### Membuat visualisasi plot pada variabel kategorik housing dan didapatkan perhitungan terbanyak pada keterangan nasabah memiliki kredit rumah 
+#### Membuat visualisasi plot pada variabel kategorik loan dan didapatkan perhitungan terbanyak pada keterangan nasabah yang tidak memiliki kredit pribadi
+#### Membuat visualisasi plot pada variabel kategorik contact dan didapatkan perhitungan terbanyak pada jenis komunikasi cellular yang banyak digunakan untuk menghubungi nasabah
+#### Membuat visualisasi plot pada variabel kategorik month dan didapatkan perhitungan terbanyak pada bulan may yang terakhir kali menghubungi nasabah
+
+
+### v)	Metode klasifikasi yang digunakan 
+```{r}
+bank$job <- as.factor(bank$job)
+bank$marital <- as.factor(bank$marital)
+bank$education <- as.factor(bank$education)
+bank$default <- as.factor(bank$default)
+bank$housing <- as.factor(bank$housing)
+bank$loan <- as.factor(bank$loan)
+bank$contact <- as.factor(bank$contact)
+bank$month <- as.factor(bank$month)
+bank$poutcome <- as.factor(bank$poutcome)
+bank$y <- as.factor(bank$y)
+```
+# Dilakukan pengubahan data pada masing-masing variabel menjadi data factor untuk membantu meningkatkan efisiensi dan akurasi dalam analisis data kategorikal yang akan digunakan dalam pemodelan.
+
+### Spilt data 
+```{r}
+set.seed(123)
+trainIndex <- sample(1:nrow(bank), 0.7*nrow(bank))
+train <- bank[trainIndex,]
+test <- bank[-trainIndex,]
+```
+#### Dilakukan split data menjadi data train 70% dan 30% data test yang sangat berguna untuk melakukan pemodelan data dan untuk menghindari overfitting lalu dapat memastikan model yang dihasilkan dapat generalisasi pada data yang baru. Data train akan digunakan untuk membangun model klasifikasi, sedangkan data test akan digunakan untuk menguji performa model.
+
+### Decision Tree
+```{r}
+tree <- tree(y~., data = train)
+summary(tree)
+```
+### Setelah data dibagi, dilakukan pembuatan model Decision Tree dengan memanggil fungsi tree(). Pada kode tersebut, variabel 'y' digunakan sebagai variabel target dan seluruh variabel lainnya dijadikan sebagai variabel prediktor. Data yang digunakan untuk membangun model adalah data train.
+
+### Melakukan summary untuk memberikan informasi tentang struktur decision tree yang dihasilkan, jumlah node, split, variable yang paling penting, dan juga akurasi model.
+
+```{r}
+plot(tree, main = "Bank Marketing Decision Tree using Classification")
+text(tree, pretty = 0, cex = 0.6)
+```
+### Visualisasi decision tree.
+
+### Visualisasi ini digunakan untuk memahami bagaimana model decision tree memprediksi target pada dataset.
+
+### Fungsi plot() digunakan untuk membuat plot dari model decision tree dengan argumen tree yang telah dibuat sebelumnya dan argumen main digunakan untuk memberikan judul pada plot.
+
+### Fungsi text() digunakan untuk menambahkan teks ke dalam plot dengan argumen tree dan argumen pretty yang di-set menjadi 0 yaitu untuk menampilkan simpul-simpul pada decision tree tanpa menggunakan indentasi. Argumen cex digunakan untuk mengatur ukuran font pada teks.
+
+```{r}
+set.seed(123)
+cv.data <- cv.tree(tree, FUN = prune.tree)
+plot(cv.data, type = "b")
+
+size.min <- cv.data$size[which.min(cv.data$dev)]
+paste("Size with the lowest deviance: ", size.min)
+points(size.min, cv.data$dev[size.min], col = "steelblue", cex = 2, pch = 20)
+
+Size <- cv.data$size
+Deviance <- cv.data$dev
+da <- data.frame(Size, Deviance)
+ggplot(da, aes(x = Size, y = Deviance)) + 
+  geom_line(colour = "black") + 
+  geom_point(colour = "red") + 
+  geom_point(aes(x = size.min, y = cv.data$dev[size.min]), col = "darkred", cex = 2, pch = 19) + 
+  xlab("Size") + 
+  ylab("Deviance") + 
+  ggtitle("Cross-validation tree model")
+
+cv.data$dev[size.min]
+
+prune <- prune.tree(tree, best = size.min)
+plot(prune)
+text(prune, pretty = 0, cex = 0.7)
+```
+### Dilakukan pruning atau memotong bagian dari decision tree yang tidak relevan (Overfitting) pada data training sehingga dapat meningkatkan performa model pada data test.
+
+### Dilakukan cross-validation pada model decision tree dengan memanggil fungsi cv.tree() dan menyertakan argumen tree dan FUN = prune.tree atau melakukan pruning pada decision tree.
+
+### Dilakukan plot dengan memanggil plot(cv.data, type = "b") yang akan menampilkan plot size vs. cross-validated error dan menunjukkan nilai size dengan deviance terendah. Nilai size dengan deviance terendah tersebut disimpan ke dalam variabel size.min dan ditampilkan pada output dengan menggunakan fungsi paste().
+
+### Dilakukan plot menggunaka ggplot2 untuk memvisualisasikan hasil cross-validation. Dari hasil plot tersebut dapat disimpulkan bahwa semakin besar size maka semakin kompleks pula model decision tree.
+
+### Setelah mendapatkan nilai size terbaik, dilakukan pruning pada decision tree dengan memanggil fungsi prune.tree() dengan argumen tree dan best = size.min.
+
+### Dilakukan plot pada decision tree yang telah di-pruning dengan memanggil plot() dan menambahkan teks pada plot menggunakan fungsi text().
+
+```{r}
+set.seed(123)
+bag <- randomForest(y ~ ., data = train, mtry = 10, importance = TRUE)
+bag
+```
+### Membuat model Random Forest pada dataset Bank Marketing yang telah dibagi menjadi data train dan test sebelumnya. 
+
+### Pada argumen pertama y ~ ., variabel target y dijadikan variabel dependen dan seluruh variabel lainnya dijadikan variabel independen. Argumen kedua data = train menyatakan bahwa model dibuat menggunakan data train yang sudah diatur sebelumnya.
+
+### Argumen mtry = 10 menyatakan jumlah variabel yang dipilih secara acak dari seluruh variabel independen pada saat setiap pohon dalam Random Forest dibangun.
+
+### Argumen importance = TRUE menyatakan bahwa akan dihitung nilai penting (importance) setiap variabel dalam model.
+
+### Hasil output menunjukkan bahwa model Random Forest yang dibuat memiliki OOB error rate sebesar 10.34%, yang berarti tingkat akurasi model sebesar 89.66%. Selain itu, confusion matrix juga ditampilkan yang menunjukkan hasil klasifikasi antara nilai aktual dan nilai prediksi.
+
+```{r}
+set.seed(123)
+rf.data <- randomForest(y ~ ., data = train, mtry = 10, ntree = 500, importance = TRUE)
+importance(rf.data)
+```
+### Argumen mtry di-set menjadi 10, yang artinya jumlah variabel acak yang dipilih pada setiap pemilihan split pada random forest adalah 10. Sedangkan argumen ntree di-set menjadi 500, yang artinya model random forest dibangun dengan menggunakan 500 decision tree.
+
+### Fungsi importance() digunakan untuk menampilkan tingkat pentingnya variabel pada model random forest dalam memprediksi target. 
+
+### Pada output, terdapat empat kolom pada output importance(), yaitu kolom 0 dan 1 yang menunjukkan tingkat pentingnya variabel dalam memprediksi kelas 0 dan 1, serta kolom MeanDecreaseAccuracy dan MeanDecreaseGini yang menunjukkan pengaruh variabel terhadap akurasi model dan pengurangan impurity dalam membangun decision tree. Setelah itu, model random forest digunakan untuk memprediksi target pada dataset test menggunakan fungsi predict().
+
+### vi)	Pilihan model – kesalahan uji  
+```{r}
+pred <- predict(tree, test)
+MSE <- mean((as.numeric(as.character(test$y)) - as.numeric(as.character(pred)))^2)
+paste("MSE of Decision Tree = ", MSE)
+```
+### Hasil perhitungan MSE untuk model Decision Tree adalah sebesar 0.428. Hal ini menunjukkan bahwa rata-rata dari kuadrat selisih antara nilai prediksi dan nilai observasi pada data uji adalah sebesar 0.428, yang menunjukkan tingkat kesalahan yang cukup rendah pada model tersebut.
+
+```{r}
+pred_prune <- predict(prune, newdata = test)
+purn_mse <- mean((as.numeric(as.character(test$y)) - as.numeric(as.character(pred_prune)))^2)
+paste("MSE of Pruning = ", purn_mse)
+```
+### Hasilnya menunjukkan bahwa nilai MSE dari model Decision Tree yang sudah dipruning adalah 0.428138264969925, sama dengan nilai MSE dari model Decision Tree sebelum dipruning. Ini menunjukkan bahwa prunning tidak meningkatkan performa model dalam hal mengurangi kesalahan prediksi pada data uji.
+
+```{r}
+bag.pred <- predict(bag, newdata = test)
+MSE_BAG <- mean((as.numeric(as.character(test$y)) - as.numeric(as.character(bag.pred)))^2)
+paste("MSE of Bagging tree model = ", MSE_BAG)
+```
+
+### Dalam model decision tree, MSE-nya adalah 0.428138264969925. Setelah dilakukan pruning, MSE-nya tidak berubah, masih sama dengan 0.428138264969925. Sedangkan pada model bagging tree, MSE-nya adalah 0.103168754605748, jauh lebih rendah daripada MSE pada model decision tree. Hal ini menunjukkan bahwa model bagging tree lebih baik dalam memprediksi data uji daripada model decision tree.
+
+```{r}
+rf.pred <- predict(rf.data, newdata = test)
+rf.mse <- mean((as.numeric(as.character(test$y)) - as.numeric(as.character(rf.pred)))^2)
+paste("MSE of random forest = ", rf.mse)
+```
+### Model random forest memiliki nilai MSE yang paling rendah, yaitu sebesar 0.102431834929993. Hal ini menunjukkan bahwa model random forest dapat memberikan prediksi yang lebih akurat dibandingkan dengan model lainnya dalam memprediksi apakah seseorang akan berlangganan deposito atau tidak.
+
+```{r}
+MSE <- c(rf.mse,MSE_BAG,purn_mse,MSE)
+names(MSE) <- c("Random Forest", "Bagging","Pruning","DT biasa")
+barplot(sort(MSE),col = "skyblue")
+```
+### Bar plot dari hasil kesalahan uji (MSE) dari empat model yang telah dibangun, yaitu Random Forest, Bagging, Pruning, dan Decision Tree biasa. Setelah menghitung MSE untuk setiap model, hasilnya disimpan dalam vektor MSE. Kemudian, nama setiap model ditambahkan ke dalam vektor names(MSE).
+
+### Dari barplot diatas, dapat disimpulkan bahwa model Random Forest dan Bagging menghasilkan MSE yang lebih kecil dibandingkan dengan model Pruning dan Decision Tree biasa. Selain itu, Random Forest dan Bagging memiliki MSE yang hampir sama, dan keduanya lebih unggul dibandingkan dengan model Pruning dan Decision Tree biasa.
+
+#### Pada pengerjaan tugas ini, dilakukan pengujian terhadap model Decision Tree dengan dan tanpa pruning, serta model Random Forest dan Bagging pada dataset Bank Marketing. Hasil pengujian menunjukkan bahwa model Random Forest dan Bagging menghasilkan MSE yang lebih kecil dibandingkan dengan model Decision Tree tanpa pruning dan setelah dilakukan pruning. Namun, terkadang dapat terjadi bahwa hasil MSE antara model Decision Tree dengan dan tanpa pruning sama atau bahkan model Decision Tree tanpa pruning memiliki MSE yang lebih kecil daripada model dengan pruning.  
+#### Hal ini dapat terjadi jika model Decision Tree awalnya tidak terlalu kompleks dan tidak terlalu overfitting pada data training. Ketika pruning dilakukan, cabang-cabang yang dianggap tidak terlalu signifikan dihapus sehingga model menjadi lebih simpel. Namun, jika model awal sudah cukup simpel dan tidak terlalu overfitting pada data training, maka pruning tidak akan memberikan dampak yang signifikan pada performa model, sehingga hasil MSE antara model dengan pruning dan tanpa pruning bisa sama atau bahkan lebih kecil pada model tanpa pruning. Oleh karena itu, pemilihan model terbaik harus dilakukan dengan mempertimbangkan trade-off antara akurasi dan kekompleksan model.
+
+### vii)	Kesimpulan dan diskusi (yang dirujuk pada pertanyaan yang ingin Anda jawab) 
